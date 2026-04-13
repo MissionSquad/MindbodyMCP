@@ -1,4 +1,8 @@
-import { mindbodyClient } from '../api/client';
+import { getMindbodyExecutionContext } from '../runtime.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get enrollments (courses, workshops, series)
 export async function getEnrollmentsTool(
@@ -41,7 +45,7 @@ export async function getEnrollmentsTool(
   }>;
   totalEnrollments: number;
 }> {
-  const response = await mindbodyClient.get<any>('/enrollment/enrollments', {
+  const response = await getMindbodyClient().get<any>('/enrollment/enrollments', {
     params: {
       LocationIds: locationIds,
       ClassScheduleIds: classScheduleIds,
@@ -117,7 +121,7 @@ export async function addClientToEnrollmentTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/enrollment/addclienttoenrollment', {
+    const response = await getMindbodyClient().post<any>('/enrollment/addclienttoenrollment', {
       ClientId: clientId,
       ClassScheduleIds: classScheduleIds,
       EnrollmentDateForward: enrollmentDateForward,
@@ -176,7 +180,7 @@ export async function getClientEnrollmentsTool(
   }>;
   totalEnrollments: number;
 }> {
-  const response = await mindbodyClient.get<any>('/client/clientenrollments', {
+  const response = await getMindbodyClient().get<any>('/client/clientenrollments', {
     params: {
       ClientId: clientId,
     },

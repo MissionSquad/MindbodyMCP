@@ -1,5 +1,9 @@
-import { mindbodyClient } from '../api/client';
-import { classCache } from '../cache/index';
+import { classCache } from '../cache/index.js';
+import { getMindbodyExecutionContext } from '../runtime.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get clients with search and filtering
 export async function getClientsTool(
@@ -37,7 +41,7 @@ export async function getClientsTool(
   }>;
   totalClients: number;
 }> {
-  const response = await mindbodyClient.get<any>('/client/clients', {
+  const response = await getMindbodyClient().get<any>('/client/clients', {
     params: {
       SearchText: searchText,
       ClientIds: clientIds,
@@ -109,7 +113,7 @@ export async function addClientTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/client/addclient', {
+    const response = await getMindbodyClient().post<any>('/client/addclient', {
       FirstName: firstName,
       LastName: lastName,
       Email: email,
@@ -191,7 +195,7 @@ export async function updateClientTool(
     if (updates.emergencyContactPhone) updateData.EmergencyContactInfoPhone = updates.emergencyContactPhone;
     if (updates.sendAccountEmails !== undefined) updateData.SendAccountEmails = updates.sendAccountEmails;
 
-    const response = await mindbodyClient.post<any>('/client/updateclient', updateData);
+    const response = await getMindbodyClient().post<any>('/client/updateclient', updateData);
 
     return {
       success: true,
@@ -241,7 +245,7 @@ export async function getClientVisitsTool(
     byInstructor: Record<string, number>;
   };
 }> {
-  const response = await mindbodyClient.get<any>('/client/clientvisits', {
+  const response = await getMindbodyClient().get<any>('/client/clientvisits', {
     params: {
       ClientId: clientId,
       StartDate: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -309,7 +313,7 @@ export async function getClientMembershipsTool(
   }>;
   totalMemberships: number;
 }> {
-  const response = await mindbodyClient.get<any>('/client/activeclientmemberships', {
+  const response = await getMindbodyClient().get<any>('/client/activeclientmemberships', {
     params: {
       ClientId: clientId,
       LocationId: locationId,
@@ -345,7 +349,7 @@ export async function addClientArrivalTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/client/addarrival', {
+    const response = await getMindbodyClient().post<any>('/client/addarrival', {
       ClientId: clientId,
       LocationId: locationId,
     });
@@ -375,7 +379,7 @@ export async function getClientAccountBalancesTool(
     lastFour: string;
   }>;
 }> {
-  const response = await mindbodyClient.get<any>('/client/clientaccountbalances', {
+  const response = await getMindbodyClient().get<any>('/client/clientaccountbalances', {
     params: {
       ClientIds: [clientId],
     },
@@ -410,7 +414,7 @@ export async function getClientContractsTool(
   }>;
   totalContracts: number;
 }> {
-  const response = await mindbodyClient.get<any>('/client/clientcontracts', {
+  const response = await getMindbodyClient().get<any>('/client/clientcontracts', {
     params: {
       ClientId: clientId,
     },

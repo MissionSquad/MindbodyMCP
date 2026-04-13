@@ -1,41 +1,12 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master, develop]
   pull_request:
-    branches: [main, master, develop]
+    types: [opened, synchronize]
+    paths-ignore:
+      - '**.md'
 
 jobs:
-  test-bun:
-    name: Test with Bun
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-          
-      - name: Install dependencies
-        run: bun install
-        
-      - name: Run type checking
-        run: bunx tsc --noEmit || true
-        
-      - name: Run tests
-        run: echo "Skipping tests - no test files yet"
-        continue-on-error: true
-        
-      - name: Test tool loading
-        run: echo "Skipping tool test - would require env vars"
-        continue-on-error: true
-        
-      - name: Build check
-        run: bun run src/index.ts --help || true
-
   test-node:
     name: Test with Node.js
     runs-on: ubuntu-latest
@@ -50,20 +21,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
           
       - name: Install dependencies
-        run: |
-          npm install --package-lock-only
-          npm ci
-        
-      - name: Run type checking
-        run: npx tsc --noEmit || true
+        run: npm ci
         
       - name: Build
-        run: npm run node:build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
         
-      - name: Test build output
-        run: node dist/index.js --help || true
+      - name: Verify stdio startup
+        run: |
+          set +e
+          timeout 5s node dist/index.js --transport stdio
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            exit "$status"
+          fi
 
   validate-mcp:
     name: Validate MCP Server
@@ -71,18 +48,17 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
-          
+          node-version: '20'
+          cache: npm
+
       - name: Install dependencies
-        run: bun install
-        
-      - name: Validate tool schemas
-        run: |
-          echo "Validating MCP tool schemas..."
-          bun run src/index.ts 2>&1 | head -n 5 || true
+        run: npm ci
+
+      - name: Validate package contents
+        run: npm pack --dry-run
           
       - name: Check environment template
         run: |
@@ -90,9 +66,6 @@ jobs:
             echo "Error: .env.example file missing"
             exit 1
           fi
-          
-      - name: Validate TypeScript types
-        run: bunx tsc --noEmit || true
 
   security:
     name: Security Scan

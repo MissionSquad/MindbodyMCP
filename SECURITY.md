@@ -45,7 +45,7 @@ When using Mindbody MCP:
 2. **Use HTTPS in production**: When deploying with SSE, always use SSL/TLS certificates
 3. **Restrict CORS origins**: In production, set specific allowed origins instead of wildcards
 4. **Keep dependencies updated**: Regularly update the MCP SDK and other dependencies
-5. **Monitor for vulnerabilities**: Use `npm audit` or `bun audit` regularly
+5. **Monitor for vulnerabilities**: Use `npm audit` regularly
 6. **Rotate credentials**: Regularly rotate your Mindbody API credentials
 7. **Limit permissions**: Use the principle of least privilege for API access
 

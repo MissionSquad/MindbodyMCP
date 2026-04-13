@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { ResolvedMindbodyConfig } from '../config.js';
 
 interface TokenResponse {
   TokenType: string;
@@ -11,50 +12,43 @@ interface UserToken {
   expiresAt: Date;
 }
 
-class MindbodyAuth {
+export class MindbodyAuthSession {
   private userToken: UserToken | null = null;
-  private tokenFailed: boolean = false;
-  private readonly apiUrl: string;
+  private tokenFailed = false;
 
-  constructor() {
-    this.apiUrl = process.env.MINDBODY_API_URL || 'https://api.mindbodyonline.com/public/v6';
-  }
+  constructor(private readonly config: ResolvedMindbodyConfig) {}
 
   private hasSourceCredentials(): boolean {
-    return !!(process.env.MINDBODY_SOURCE_NAME && process.env.MINDBODY_SOURCE_PASSWORD);
+    return Boolean(this.config.sourceName && this.config.sourcePassword);
   }
 
   async getUserToken(): Promise<string | null> {
-    // If we don't have source credentials, skip token auth
     if (!this.hasSourceCredentials()) {
       return null;
     }
 
-    // If token acquisition previously failed, don't keep retrying
     if (this.tokenFailed) {
       return null;
     }
 
-    // Check if we have a valid token
     if (this.userToken && this.userToken.expiresAt > new Date()) {
       return this.userToken.token;
     }
 
     try {
-      // Get new token
       const response = await axios.post<TokenResponse>(
-        `${this.apiUrl}/usertoken/issue`,
+        `${this.config.apiUrl}/usertoken/issue`,
         {
-          Username: process.env.MINDBODY_SOURCE_NAME,
-          Password: process.env.MINDBODY_SOURCE_PASSWORD,
+          Username: this.config.sourceName,
+          Password: this.config.sourcePassword,
         },
         {
           headers: {
-            'Api-Key': process.env.MINDBODY_API_KEY!,
-            'SiteId': process.env.MINDBODY_SITE_ID!,
+            'Api-Key': this.config.apiKey,
+            SiteId: this.config.siteId,
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       const expiresAt = new Date();
@@ -70,39 +64,48 @@ class MindbodyAuth {
     } catch (error: any) {
       const status = error.response?.status;
       const message = error.response?.data?.Error?.Message || error.message;
-      console.error(`User token acquisition failed (${status}): ${message}. Falling back to API-key-only auth.`);
+      console.error(
+        `Mindbody user token acquisition failed (${status ?? 'unknown'}): ${message}. Falling back to API-key-only auth.`,
+      );
       this.tokenFailed = true;
       return null;
     }
   }
 
-  /**
-   * Reset the token failure state so next request retries token acquisition.
-   * Useful after credentials are updated or for periodic retry.
-   */
   resetTokenState(): void {
     this.tokenFailed = false;
     this.userToken = null;
   }
 
   getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Api-Key': process.env.MINDBODY_API_KEY!,
-      'SiteId': process.env.MINDBODY_SITE_ID!,
+    return {
+      'Api-Key': this.config.apiKey,
+      SiteId: this.config.siteId,
       'Content-Type': 'application/json',
     };
-
-    return headers;
   }
 
   async getAuthHeaders(): Promise<Record<string, string>> {
     const headers = this.getHeaders();
     const token = await this.getUserToken();
+
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
+
     return headers;
   }
 }
 
-export const mindbodyAuth = new MindbodyAuth();
+const authSessionCache = new Map<string, MindbodyAuthSession>();
+
+export function getMindbodyAuthSession(config: ResolvedMindbodyConfig): MindbodyAuthSession {
+  const cached = authSessionCache.get(config.cacheScopeKey);
+  if (cached) {
+    return cached;
+  }
+
+  const session = new MindbodyAuthSession(config);
+  authSessionCache.set(config.cacheScopeKey, session);
+  return session;
+}

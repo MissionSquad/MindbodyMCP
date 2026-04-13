@@ -1,5 +1,9 @@
-import { mindbodyClient } from '../api/client';
-import { classCache } from '../cache/index';
+import { classCache } from '../cache/index.js';
+import { getMindbodyExecutionContext } from '../runtime.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get site information
 export async function getSitesTool(): Promise<{
@@ -29,7 +33,7 @@ export async function getSitesTool(): Promise<{
   let cached = classCache.get<any>(cacheKey);
 
   if (!cached) {
-    cached = await mindbodyClient.get<any>('/site/sites', {
+    cached = await getMindbodyClient().get<any>('/site/sites', {
       params: { Limit: 1 },
     });
     classCache.set(cacheKey, cached, 60); // Cache for 60 minutes
@@ -98,7 +102,7 @@ export async function getLocationsTool(): Promise<{
   let cached = classCache.get<any>(cacheKey);
 
   if (!cached) {
-    cached = await mindbodyClient.get<any>('/site/locations', {
+    cached = await getMindbodyClient().get<any>('/site/locations', {
       params: { Limit: 100 },
     });
     classCache.set(cacheKey, cached, 60); // Cache for 60 minutes
@@ -154,7 +158,7 @@ export async function getProgramsTool(
   }>;
   totalPrograms: number;
 }> {
-  const response = await mindbodyClient.get<any>('/site/programs', {
+  const response = await getMindbodyClient().get<any>('/site/programs', {
     params: {
       ScheduleType: scheduleType || 'All',
       OnlineOnly: onlineOnly,
@@ -189,7 +193,7 @@ export async function getResourcesTool(
   }>;
   totalResources: number;
 }> {
-  const response = await mindbodyClient.get<any>('/site/resources', {
+  const response = await getMindbodyClient().get<any>('/site/resources', {
     params: {
       SessionTypeIds: sessionTypeIds,
       LocationId: locationId,
@@ -229,7 +233,7 @@ export async function getSessionTypesTool(
   }>;
   totalSessionTypes: number;
 }> {
-  const response = await mindbodyClient.get<any>('/site/sessiontypes', {
+  const response = await getMindbodyClient().get<any>('/site/sessiontypes', {
     params: {
       ProgramIds: programIds,
       OnlineOnly: onlineOnly,
@@ -290,7 +294,7 @@ export async function getStaffTool(
   }>;
   totalStaff: number;
 }> {
-  const response = await mindbodyClient.get<any>('/staff/staff', {
+  const response = await getMindbodyClient().get<any>('/staff/staff', {
     params: {
       StaffIds: staffIds,
       Filters: filters,
@@ -336,7 +340,7 @@ export async function getActivationCodeTool(): Promise<{
   activationCode: string;
   activationLink: string;
 }> {
-  const response = await mindbodyClient.get<any>('/site/activationcode');
+  const response = await getMindbodyClient().get<any>('/site/activationcode');
 
   return {
     activationCode: response.ActivationCode,

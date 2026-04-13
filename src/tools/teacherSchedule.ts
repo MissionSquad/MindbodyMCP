@@ -1,5 +1,5 @@
-import { mindbodyClient } from '../api/client';
-import { teacherCache, classCache } from '../cache/index';
+import { teacherCache, classCache } from '../cache/index.js';
+import { getMindbodyExecutionContext } from '../runtime.js';
 import {
   GetStaffRequest,
   GetStaffResponse,
@@ -7,7 +7,7 @@ import {
   GetClassesResponse,
   Staff,
   TeacherSchedule,
-} from '../types/mindbody';
+} from '../types/mindbody.js';
 import {
   getToday,
   getWeekFromDate,
@@ -15,7 +15,11 @@ import {
   formatTime,
   getDurationInMinutes,
   getDateOnly,
-} from '../utils/dates';
+} from '../utils/dates.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 async function findTeacherByName(name: string): Promise<Staff | null> {
   const cacheKey = `teacher:${name.toLowerCase()}`;
@@ -30,7 +34,7 @@ async function findTeacherByName(name: string): Promise<Staff | null> {
     Limit: 100,
   };
 
-  const response = await mindbodyClient.get<GetStaffResponse>('/staff/staff', {
+  const response = await getMindbodyClient().get<GetStaffResponse>('/staff/staff', {
     params: request,
   });
 
@@ -77,7 +81,7 @@ export async function getTeacherScheduleTool(
       Limit: 200, // Max allowed
     };
 
-    classes = await mindbodyClient.get<GetClassesResponse>('/class/classes', {
+    classes = await getMindbodyClient().get<GetClassesResponse>('/class/classes', {
       params: request,
     });
 

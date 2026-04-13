@@ -1,23 +1,23 @@
-# Build stage - Use Bun runtime for maximum performance
-FROM oven/bun:1-alpine AS builder
+# Build stage
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lockb* ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile --production
+RUN npm ci
 
 # Copy source code
 COPY . .
 
 # Build TypeScript
-RUN bun run build
+RUN npm run build && npm prune --omit=dev
 
 # Production stage
-FROM oven/bun:1-alpine
+FROM node:20-alpine
 
 # Install dumb-init for signal handling and curl for healthchecks
 RUN apk add --no-cache dumb-init curl
@@ -44,12 +44,12 @@ EXPOSE 3000
 
 # Health check for SSE server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+  CMD node -e "const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),5000); fetch('http://localhost:3000/sse',{headers:{Accept:'text/event-stream'},signal:controller.signal}).then((response)=>{clearTimeout(timeout); process.exit(response.ok?0:1)}).catch(()=>process.exit(1))"
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the MCP server - defaults to STDIO, but can be overridden
 # For SSE: docker run -e MCP_TRANSPORT=sse image
-# Or override: docker run image bun run dist/index.js --transport sse
-CMD ["bun", "run", "dist/index.js"]
+# Or override: docker run image node dist/index.js --transport sse
+CMD ["node", "dist/index.js"]
