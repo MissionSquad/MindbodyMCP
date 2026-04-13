@@ -15,7 +15,9 @@ Brief description of what this PR does.
 - 
 
 ## Testing
-- [ ] Tested locally with `bun run test:tool`
+- [ ] Tested locally with `npm run test:tool`
+- [ ] Tested locally with `npm test`
+- [ ] Tested locally with `npm run build`
 - [ ] Tested with Claude Desktop
 - [ ] Added/updated tests as needed
 - [ ] All tests passing
