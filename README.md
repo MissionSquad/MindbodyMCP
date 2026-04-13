@@ -1,6 +1,6 @@
 # 🧘 Mindbody MCP Server
 
-[![npm version](https://badge.fury.io/js/%40vespo92%2Fmindbody-mcp.svg)](https://www.npmjs.com/package/@vespo92/mindbody-mcp)
+[![npm version](https://badge.fury.io/js/%40missionsquad%2Fmcp-mindbody.svg)](https://www.npmjs.com/package/@missionsquad/mcp-mindbody)
 [![CI](https://github.com/vespo92/MindbodyMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/vespo92/MindbodyMCP/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-v1.17.2-blue)](https://github.com/modelcontextprotocol/sdk)
@@ -15,7 +15,7 @@ A comprehensive Model Context Protocol (MCP) server that provides AI assistants 
 - **Sales & Commerce** - Process payments, sell packages, memberships, and retail products
 - **Staff Management** - View schedules, manage appointments, track availability
 - **Multi-Location Support** - Manage multiple studio locations seamlessly
-- **High Performance** - Built on Bun runtime with intelligent caching
+- **High Performance** - Built on Node.js with intelligent caching
 - **Type-Safe** - Full TypeScript support with comprehensive types
 - **Dual Transport Support** - STDIO for local development, SSE for production deployment
 
@@ -25,20 +25,10 @@ A comprehensive Model Context Protocol (MCP) server that provides AI assistants 
 
 ```bash
 # Run directly without installation
-npx @vespo92/mindbody-mcp
+npx @missionsquad/mcp-mindbody
 
 # Or install globally
-npm install -g @vespo92/mindbody-mcp
-```
-
-### Installation with bunx (Bun - 4x faster)
-
-```bash
-# Run directly without installation  
-bunx @vespo92/mindbody-mcp
-
-# Or install globally with Bun
-bun install -g @vespo92/mindbody-mcp
+npm install -g @missionsquad/mcp-mindbody
 ```
 
 ### Install from GitHub
@@ -47,20 +37,18 @@ bun install -g @vespo92/mindbody-mcp
 # Using npx
 npx github:vespo92/MindbodyMCP
 
-# Using bunx (recommended for performance)
-bunx github:vespo92/MindbodyMCP
-
 # Or clone and run locally
 git clone https://github.com/vespo92/MindbodyMCP.git
 cd MindbodyMCP
-bun install # or npm install
-bun run start # or npm start
+npm install
+npm run build
+npm start
 ```
 
 ## 📋 Prerequisites
 
-- Node.js 18+ or Bun 1.0+
-- Mindbody API credentials (API Key, Site ID, Source credentials)
+- Node.js 18+
+- Mindbody API credentials (API Key and Site ID; source credentials are optional and only needed for bearer-token issuance)
 - Claude Desktop or any MCP-compatible client
 
 ## ⚙️ Configuration
@@ -71,7 +59,7 @@ bun run start # or npm start
 2. Create a new app to get your API credentials
 3. Note your Site ID (use -99 for sandbox testing)
 
-### 2. Set Environment Variables
+### 2. Set Environment Variables For Local Standalone Use
 
 Create a `.env` file in your project root:
 
@@ -82,17 +70,86 @@ cp .env.example .env
 # Edit with your credentials
 MINDBODY_API_KEY=your_api_key_here
 MINDBODY_SITE_ID=-99  # Your site ID
-MINDBODY_SOURCE_NAME=your_source_name
+MINDBODY_SOURCE_NAME=your_source_name      # Optional; provide with MINDBODY_SOURCE_PASSWORD
 MINDBODY_SOURCE_PASSWORD=your_source_password
 
 # Optional settings
 MINDBODY_API_URL=https://api.mindbodyonline.com/public/v6
 CACHE_TTL_MINUTES=5
-MCP_SERVER_NAME=mindbody-mcp
-MCP_SERVER_VERSION=2.0.0
+MCP_SERVER_NAME=mcp-mindbody
+MCP_SERVER_VERSION=2.0.2
 ```
 
-### 3. Configure Claude Desktop
+### 3. MissionSquad Hidden Secret Injection
+
+When `mcp-mindbody` runs behind MissionSquad `mcp-api`, Mindbody credentials should be configured as hidden server-scoped secrets, not visible tool arguments.
+
+Hidden contract:
+
+- `apiKey` required
+- `siteId` required
+- `sourceName` optional, but only valid with `sourcePassword`
+- `sourcePassword` optional, but only valid with `sourceName`
+- `apiUrl` optional
+
+MissionSquad server registration example:
+
+```json
+{
+  "name": "mcp-mindbody",
+  "transportType": "stdio",
+  "command": "node",
+  "args": ["/opt/mcp-mindbody/dist/index.js"],
+  "secretNames": ["apiKey", "siteId", "sourceName", "sourcePassword", "apiUrl"],
+  "secretFields": [
+    {
+      "name": "apiKey",
+      "label": "Mindbody API key",
+      "description": "Mindbody public API key for the target site.",
+      "required": true,
+      "inputType": "password"
+    },
+    {
+      "name": "siteId",
+      "label": "Mindbody site ID",
+      "description": "Mindbody site ID for the execution target.",
+      "required": true,
+      "inputType": "password"
+    },
+    {
+      "name": "sourceName",
+      "label": "Mindbody source username",
+      "description": "Optional source credential username. Provide with sourcePassword.",
+      "required": false,
+      "inputType": "password"
+    },
+    {
+      "name": "sourcePassword",
+      "label": "Mindbody source password",
+      "description": "Optional source credential password. Provide with sourceName.",
+      "required": false,
+      "inputType": "password"
+    },
+    {
+      "name": "apiUrl",
+      "label": "Mindbody API base URL",
+      "description": "Optional override for the Mindbody API base URL.",
+      "required": false,
+      "inputType": "password"
+    }
+  ]
+}
+```
+
+Runtime rules:
+
+- Tool schemas stay auth-free.
+- MissionSquad injects hidden values per tool call.
+- The server resolves hidden values from FastMCP `context.extraArgs`.
+- Hidden values override env fallback on every call.
+- The process starts without authenticated upstream access, so a shared MissionSquad server can boot before any user-specific secrets are present.
+
+### 4. Configure Claude Desktop
 
 Add to your Claude Desktop configuration:
 
@@ -103,8 +160,8 @@ Add to your Claude Desktop configuration:
 {
   "mcpServers": {
     "mindbody": {
-      "command": "bunx",
-      "args": ["@vespo92/mindbody-mcp"],
+      "command": "npx",
+      "args": ["@missionsquad/mcp-mindbody"],
       "env": {
         "MINDBODY_API_KEY": "your_api_key",
         "MINDBODY_SITE_ID": "-99",
@@ -122,7 +179,7 @@ Or use the GitHub repository directly:
 {
   "mcpServers": {
     "mindbody": {
-      "command": "bunx",
+      "command": "npx",
       "args": ["github:vespo92/MindbodyMCP"],
       "env": {
         "MINDBODY_API_KEY": "your_api_key",
@@ -212,16 +269,16 @@ git clone https://github.com/vespo92/MindbodyMCP.git
 cd MindbodyMCP
 
 # Install dependencies
-bun install  # or npm install
+npm install
 
 # Run in development mode
-bun run dev  # or npm run dev
+npm run dev
 
 # Run tests
-bun test  # or npm test
+npm test
 
 # Build for production
-bun run build  # or npm run build
+npm run build
 ```
 
 ### Project Structure
@@ -248,13 +305,13 @@ The server supports SSE (Server-Sent Events) transport for production deployment
 
 ```bash
 # Start with SSE transport
-bun run start:sse
+npm run start:sse
 
 # Or with environment variable
-MCP_TRANSPORT=sse bun start
+MCP_TRANSPORT=sse npm start
 
 # With custom port
-bun run src/index.ts --transport sse --port 8080
+npx tsx src/index.ts --transport sse --port 8080
 ```
 
 ### Docker Deployment
@@ -290,25 +347,25 @@ For detailed deployment instructions, see [SSE Deployment Guide](docs/SSE_DEPLOY
 
 ```bash
 # Run all tests
-bun test
+npm test
 
 # Test SSE connection
-bun run test:sse
+npm run test:sse
 
 # Test specific tool
-bun run test:tool
+npm run test:tool
 
 # Run benchmarks
-bun run benchmark
+npm run benchmark
 
 # Type checking
-bun run typecheck
+npm run typecheck
 ```
 
 ## 📦 Publishing
 
 The package is available on:
-- **npm**: [@vespo92/mindbody-mcp](https://www.npmjs.com/package/@vespo92/mindbody-mcp)
+- **npm**: [@missionsquad/mcp-mindbody](https://www.npmjs.com/package/@missionsquad/mcp-mindbody)
 - **GitHub Packages**: [vespo92/MindbodyMCP](https://github.com/vespo92/MindbodyMCP/packages)
 
 ## 🔒 Security
@@ -343,7 +400,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Mindbody API](https://developers.mindbodyonline.com) for providing comprehensive fitness studio APIs
 - [Anthropic MCP SDK](https://github.com/modelcontextprotocol/sdk) for the Model Context Protocol
-- [Bun](https://bun.sh) for the blazing fast JavaScript runtime
+- [Node.js](https://nodejs.org/) for the JavaScript runtime
 
 ## 📞 Support
 

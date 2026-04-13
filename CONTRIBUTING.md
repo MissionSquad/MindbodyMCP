@@ -27,12 +27,12 @@ This project and everyone participating in it is governed by our Code of Conduct
    ```
 3. Install dependencies:
    ```bash
-   bun install
+   npm install
    ```
 4. Create a `.env` file with your Mindbody sandbox credentials
 5. Run tests to ensure everything works:
    ```bash
-   bun run test:tool
+   npm run test:tool
    ```
 
 ## 🤝 How Can I Contribute?
@@ -46,7 +46,7 @@ Before creating bug reports, please check existing issues. When creating a bug r
 - Expected behavior
 - Actual behavior
 - Screenshots (if applicable)
-- Your environment (OS, Bun/Node version, etc.)
+- Your environment (OS, Node version, etc.)
 
 ### Suggesting Enhancements
 
@@ -69,14 +69,11 @@ Unsure where to begin? Look for issues labeled:
 ### 1. Set Up Your Development Environment
 
 ```bash
-# Install Bun (if not already installed)
-curl -fsSL https://bun.sh/install | bash
-
 # Install dependencies
-bun install
+npm install
 
 # Run in development mode
-bun run dev
+npm run dev
 ```
 
 ### 2. Make Your Changes
@@ -93,7 +90,7 @@ bun run dev
 
 ```bash
 # Run the test tool
-bun run test:tool
+npm run test:tool
 
 # Test with Claude Desktop
 # Update your claude_desktop_config.json to point to your local version

@@ -1,4 +1,8 @@
-import { mindbodyClient } from '../api/client';
+import { getMindbodyExecutionContext } from '../runtime.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get appointments
 export async function getStaffAppointmentsTool(
@@ -34,7 +38,7 @@ export async function getStaffAppointmentsTool(
   }>;
   totalAppointments: number;
 }> {
-  const response = await mindbodyClient.get<any>('/appointment/staffappointments', {
+  const response = await getMindbodyClient().get<any>('/appointment/staffappointments', {
     params: {
       StaffIds: staffIds,
       LocationIds: locationIds,
@@ -104,7 +108,7 @@ export async function addAppointmentTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/appointment/addappointment', {
+    const response = await getMindbodyClient().post<any>('/appointment/addappointment', {
       ClientId: clientId,
       StaffId: staffId,
       LocationId: locationId,
@@ -163,7 +167,7 @@ export async function updateAppointmentTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/appointment/updateappointment', {
+    const response = await getMindbodyClient().post<any>('/appointment/updateappointment', {
       AppointmentId: appointmentId,
       StaffId: staffId,
       StartDateTime: startDateTime,
@@ -218,7 +222,7 @@ export async function getBookableItemsTool(
   }>;
   totalItems: number;
 }> {
-  const response = await mindbodyClient.get<any>('/appointment/bookableitems', {
+  const response = await getMindbodyClient().get<any>('/appointment/bookableitems', {
     params: {
       SessionTypeIds: sessionTypeIds,
       LocationIds: locationIds,
@@ -273,7 +277,7 @@ export async function getActiveSessionTimesTool(
   }>;
   totalActiveTimes: number;
 }> {
-  const response = await mindbodyClient.get<any>('/appointment/activesessiontimes', {
+  const response = await getMindbodyClient().get<any>('/appointment/activesessiontimes', {
     params: {
       ScheduleType: scheduleType || 'All',
       SessionTypeIds: sessionTypeIds,
@@ -335,7 +339,7 @@ export async function getScheduleItemsTool(
   }>;
   totalItems: number;
 }> {
-  const response = await mindbodyClient.get<any>('/appointment/scheduleitems', {
+  const response = await getMindbodyClient().get<any>('/appointment/scheduleitems', {
     params: {
       LocationIds: locationIds,
       StaffIds: staffIds,

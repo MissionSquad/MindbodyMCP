@@ -17,7 +17,7 @@ Environment="MCP_HOST=0.0.0.0"
 EnvironmentFile=/opt/mindbody-mcp/.env
 
 # Start command
-ExecStart=/usr/local/bin/bun run /opt/mindbody-mcp/dist/index.js --transport sse --port 3000
+ExecStart=/usr/bin/node /opt/mindbody-mcp/dist/index.js --transport sse --port 3000
 
 # Restart policy
 Restart=always

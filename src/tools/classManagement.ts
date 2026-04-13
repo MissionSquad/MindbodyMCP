@@ -1,11 +1,15 @@
-import { mindbodyClient } from '../api/client';
-import { classCache } from '../cache/index';
+import { classCache } from '../cache/index.js';
+import { getMindbodyExecutionContext } from '../runtime.js';
 import {
   GetClassesRequest,
   GetClassesResponse,
   Class,
   ClassDescription,
-} from '../types/mindbody';
+} from '../types/mindbody.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get all classes with filtering options
 export async function getClassesTool(
@@ -51,7 +55,7 @@ export async function getClassesTool(
       Limit: 200,
     };
 
-    cached = await mindbodyClient.get<GetClassesResponse>('/class/classes', {
+    cached = await getMindbodyClient().get<GetClassesResponse>('/class/classes', {
       params: request,
     });
 
@@ -111,7 +115,7 @@ export async function getClassDescriptionsTool(): Promise<{
   let cached = classCache.get<any>(cacheKey);
 
   if (!cached) {
-    cached = await mindbodyClient.get<any>('/class/classdescriptions', {
+    cached = await getMindbodyClient().get<any>('/class/classdescriptions', {
       params: { Limit: 200 },
     });
     classCache.set(cacheKey, cached, 60); // Cache for 60 minutes
@@ -146,7 +150,7 @@ export async function addClientToClassTool(
   amountDue?: number;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/class/addclienttoclass', {
+    const response = await getMindbodyClient().post<any>('/class/addclienttoclass', {
       ClientId: clientId,
       ClassId: classId,
       RequirePayment: requirePayment,
@@ -181,7 +185,7 @@ export async function removeClientFromClassTool(
   message: string;
 }> {
   try {
-    await mindbodyClient.post('/class/removeclientfromclass', {
+    await getMindbodyClient().post('/class/removeclientfromclass', {
       ClientId: clientId,
       ClassId: classId,
       LateCancel: lateCancel,
@@ -220,7 +224,7 @@ export async function getWaitlistEntriesTool(
   }>;
   totalEntries: number;
 }> {
-  const response = await mindbodyClient.get<any>('/class/waitlistentries', {
+  const response = await getMindbodyClient().get<any>('/class/waitlistentries', {
     params: {
       ClassScheduleIds: classScheduleIds,
       ClassIds: classIds,
@@ -264,7 +268,7 @@ export async function substituteClassTeacherTool(
   };
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/class/substituteclassteacher', {
+    const response = await getMindbodyClient().post<any>('/class/substituteclassteacher', {
       ClassId: classId,
       StaffId: originalTeacherId,
       SubstituteStaffId: substituteTeacherId,
@@ -314,7 +318,7 @@ export async function getClassSchedulesTool(
   }>;
   totalSchedules: number;
 }> {
-  const response = await mindbodyClient.get<any>('/class/classschedules', {
+  const response = await getMindbodyClient().get<any>('/class/classschedules', {
     params: {
       LocationIds: locationIds,
       ClassDescriptionIds: classDescriptionIds,
@@ -383,7 +387,7 @@ export async function getClassVisitsTool(
     totalWebSignups: number;
   };
 }> {
-  const response = await mindbodyClient.get<any>('/class/classvisits', {
+  const response = await getMindbodyClient().get<any>('/class/classvisits', {
     params: {
       ClassId: classId,
       LastModifiedDate: lastModifiedDate,

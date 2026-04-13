@@ -1,4 +1,8 @@
-import { mindbodyClient } from '../api/client';
+import { getMindbodyExecutionContext } from '../runtime.js';
+
+function getMindbodyClient() {
+  return getMindbodyExecutionContext().client;
+}
 
 // Get available services (class packages, memberships)
 export async function getServicesTool(
@@ -26,7 +30,7 @@ export async function getServicesTool(
   }>;
   totalServices: number;
 }> {
-  const response = await mindbodyClient.get<any>('/sale/services', {
+  const response = await getMindbodyClient().get<any>('/sale/services', {
     params: {
       ProgramIds: programIds,
       SessionTypeIds: sessionTypeIds,
@@ -79,7 +83,7 @@ export async function getPackagesTool(
   }>;
   totalPackages: number;
 }> {
-  const response = await mindbodyClient.get<any>('/sale/packages', {
+  const response = await getMindbodyClient().get<any>('/sale/packages', {
     params: {
       LocationId: locationId,
       ClassScheduleId: classScheduleId,
@@ -134,7 +138,7 @@ export async function getProductsTool(
   }>;
   totalProducts: number;
 }> {
-  const response = await mindbodyClient.get<any>('/sale/products', {
+  const response = await getMindbodyClient().get<any>('/sale/products', {
     params: {
       ProductIds: productIds,
       SearchText: searchText,
@@ -313,7 +317,7 @@ export async function checkoutShoppingCartTool(
       return basePayment;
     });
 
-    const response = await mindbodyClient.post<any>('/sale/checkoutshoppingcart', {
+    const response = await getMindbodyClient().post<any>('/sale/checkoutshoppingcart', {
       ClientId: clientId,
       Items: cartItems,
       Payments: paymentMethods,
@@ -382,7 +386,7 @@ export async function purchaseContractTool(
   message: string;
 }> {
   try {
-    const response = await mindbodyClient.post<any>('/sale/purchasecontract', {
+    const response = await getMindbodyClient().post<any>('/sale/purchasecontract', {
       ClientId: clientId,
       ContractId: contractId,
       StartDate: startDate,
@@ -443,7 +447,7 @@ export async function getContractsTool(
   }>;
   totalContracts: number;
 }> {
-  const response = await mindbodyClient.get<any>('/sale/contracts', {
+  const response = await getMindbodyClient().get<any>('/sale/contracts', {
     params: {
       ContractIds: contractIds,
       SoldOnline: soldOnline,

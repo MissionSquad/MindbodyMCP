@@ -1,3 +1,5 @@
+import { getMindbodyExecutionContext } from '../runtime.js';
+
 interface CacheEntry<T> {
   data: T;
   expiresAt: Date;
@@ -6,30 +8,37 @@ interface CacheEntry<T> {
 export class SimpleCache {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private defaultTTL: number;
+  private namespace: string;
 
-  constructor(defaultTTLMinutes: number = 5) {
+  constructor(namespace: string, defaultTTLMinutes: number = 5) {
+    this.namespace = namespace;
     this.defaultTTL = defaultTTLMinutes * 60 * 1000; // Convert to milliseconds
+  }
+
+  private getScopedKey(key: string): string {
+    const { cacheScopeKey } = getMindbodyExecutionContext();
+    return `${this.namespace}:${cacheScopeKey}:${key}`;
   }
 
   set<T>(key: string, value: T, ttlMinutes?: number): void {
     const ttl = ttlMinutes ? ttlMinutes * 60 * 1000 : this.defaultTTL;
     const expiresAt = new Date(Date.now() + ttl);
     
-    this.cache.set(key, {
+    this.cache.set(this.getScopedKey(key), {
       data: value,
       expiresAt,
     });
   }
 
   get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
+    const entry = this.cache.get(this.getScopedKey(key));
     
     if (!entry) {
       return null;
     }
 
     if (entry.expiresAt < new Date()) {
-      this.cache.delete(key);
+      this.cache.delete(this.getScopedKey(key));
       return null;
     }
 
@@ -41,11 +50,17 @@ export class SimpleCache {
   }
 
   clear(): void {
-    this.cache.clear();
+    const prefix = `${this.namespace}:${getMindbodyExecutionContext().cacheScopeKey}:`;
+
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   delete(key: string): void {
-    this.cache.delete(key);
+    this.cache.delete(this.getScopedKey(key));
   }
 
   // Clean up expired entries
@@ -60,13 +75,15 @@ export class SimpleCache {
 }
 
 // Create singleton instances for different cache purposes
-export const teacherCache = new SimpleCache(60); // 1 hour for teacher data
-export const classCache = new SimpleCache(5);    // 5 minutes for class data
-export const generalCache = new SimpleCache(10); // 10 minutes for general data
+export const teacherCache = new SimpleCache('teacher', 60); // 1 hour for teacher data
+export const classCache = new SimpleCache('class', 5); // 5 minutes for class data
+export const generalCache = new SimpleCache('general', 10); // 10 minutes for general data
 
 // Run cleanup every 5 minutes
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   teacherCache.cleanup();
   classCache.cleanup();
   generalCache.cleanup();
 }, 5 * 60 * 1000);
+
+cleanupTimer.unref();
